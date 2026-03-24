@@ -1,0 +1,83 @@
+.custom-navbar {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    top:  50%;
+    right: 20px;
+    transform: translateY(-50%);
+    /* background: #FAF8F5; */
+    background: #333;
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    width: 200px;
+    max-height: 70vh;
+    padding: 10px;
+    border:1px solid #ccc;
+    overflow-y: auto;
+}
+
+.custom-navbar a {
+    display: flex;
+    padding: 6px 10px;
+    margin: 4px 0;
+    color: #333;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background 0.3s;
+
+}
+.custom-navbar a span{
+    font-size: 16px;
+   text-transform: capitalize;
+    color: #fff;
+
+}
+
+.nav-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
+.custom-navbar a.active,
+.custom-navbar a:hover {
+    background: #6366f1;
+    color: #fff;
+}
+
+.add-active-highlight{
+    transition: all 0.5s ease;
+    border:2px solid #ff0000;
+}
+
+/* each node */
+.tree-node {
+    margin-bottom: 4px;
+}
+
+/* label */
+.tree-label {
+    padding: 4px 6px;
+    background: #f3f4f6;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* hover */
+.tree-label:hover {
+    background: #6366f1;
+    color: #fff;
+}
+
+/* children container */
+.tree-children {
+    margin-left: 12px;
+    margin-top: 4px;
+    border-left: 2px solid #e5e7eb;
+    padding-left: 8px;
+}
