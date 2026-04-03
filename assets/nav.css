@@ -2,82 +2,362 @@
     position: fixed;
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    top:  50%;
+    gap: 12px;
+    top: 50%;
     right: 20px;
     transform: translateY(-50%);
-    /* background: #FAF8F5; */
-    background: #333;
-    padding: 10px;
-    border-radius: 8px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 16px;
+    border-radius: 16px;
     z-index: 9999;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    width: 200px;
-    max-height: 70vh;
-    padding: 10px;
-    border:1px solid #ccc;
+    box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
+    width: 260px;
+    max-height: 85vh;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     overflow-y: auto;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
 }
 
+/* Custom Scrollbar */
+.custom-navbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-navbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.custom-navbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+}
+
+.custom-navbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+
+.navbar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    margin-bottom: 8px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.navbar-header h3 {
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.5px;
+}
+
+.navbar-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-control-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.2s;
+}
+
+.nav-control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+/* Nav Items */
 .custom-navbar a {
     display: flex;
-    padding: 6px 10px;
-    margin: 4px 0;
-    color: #333;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    margin: 6px 0;
+    color: #e2e8f0;
     text-decoration: none;
-    border-radius: 4px;
-    transition: background 0.3s;
-
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    overflow: hidden;
 }
-.custom-navbar a span{
-    font-size: 16px;
-   text-transform: capitalize;
-    color: #fff;
 
+.custom-navbar a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s;
+}
+
+.custom-navbar a:hover::before {
+    left: 100%;
+}
+
+.image-text-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.custom-navbar a span {
+    font-size: 13px;
+    text-transform: capitalize;
+    font-weight: 500;
+    letter-spacing: 0.3px;
 }
 
 .nav-icon {
     width: 20px;
     height: 20px;
-    margin-right: 8px;
     object-fit: contain;
+
 }
 
 .custom-navbar a.active,
 .custom-navbar a:hover {
-    background: #6366f1;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     color: #fff;
+    transform: translateX(-4px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+    border-color: transparent;
 }
 
-.add-active-highlight{
-    transition: all 0.5s ease;
-    border:2px solid #ff0000;
+/* .custom-navbar a.active .nav-icon,
+.custom-navbar a:hover .nav-icon {
+    filter: brightness(0) invert(1);
+    opacity: 1;
+} */
+
+/* Highlight Animation */
+.add-active-highlight {
+    transition: all 0.3s ease;
+    border: 2px solid #ef4444 !important;
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.2);
+    animation: highlightPulse 1s ease;
 }
 
-/* each node */
+@keyframes highlightPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.2);
+    }
+}
+
+/* Tree Nodes */
 .tree-node {
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    animation: slideIn 0.2s ease;
+    display: none;
 }
 
-/* label */
+.tree-node.active-node {
+   display: block;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Tree Label */
 .tree-label {
-    padding: 4px 6px;
-    background: #f3f4f6;
-    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-}
-
-/* hover */
-.tree-label:hover {
-    background: #6366f1;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
     color: #fff;
 }
 
-/* children container */
+.tree-label:hover {
+    background: rgba(99, 102, 241, 0.2);
+    color: #fff;
+    transform: translateX(4px);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+/* Selected State */
+.tree-label.selected {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    border-color: transparent;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.tree-label.selected .toggle-btn {
+    color: white;
+}
+
+/* Toggle Button */
+.toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 4px;
+    border-radius: 4px;
+    color: #94a3b8;
+    transition: all 0.2s;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+    color: #fff;
+}
+
+.tree-label .toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* Children Container */
 .tree-children {
-    margin-left: 12px;
-    margin-top: 4px;
-    border-left: 2px solid #e5e7eb;
-    padding-left: 8px;
+    margin-left: 16px;
+    margin-top: 8px;
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    padding-left: 12px;
+    transition: all 0.3s ease;
+}
+
+/* Node Badge (optional - add this to your JS) */
+.node-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #94a3b8;
+    margin-left: 8px;
+}
+
+.tree-label:hover .node-badge,
+.tree-label.selected .node-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+/* Custom Navbar a .toggle-btn */
+.custom-navbar a .toggle-btn {
+    color: #94a3b8;
+    margin-left: 8px;
+}
+
+.custom-navbar a:hover .toggle-btn {
+    color: #fff;
+}
+
+/* Drag and Drop Styles */
+.tree-node.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.tree-node.drag-over {
+    border: 2px solid #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 8px;
+    margin: 4px 0;
+    padding: 4px;
+}
+
+/* Tree Container Animation */
+.tree-container {
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .custom-navbar {
+        width: 240px;
+        right: 10px;
+        padding: 12px;
+        gap: 8px;
+    }
+    
+    .custom-navbar a {
+        padding: 8px 10px;
+    }
+    
+    .custom-navbar a span {
+        font-size: 12px;
+    }
+    
+    .tree-label {
+        padding: 6px 8px;
+    }
+}
+
+/* Loading Animation */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.custom-navbar.loading {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+/* Tooltip Styles (optional) */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 4px 8px;
+    background: #1e293b;
+    color: white;
+    font-size: 11px;
+    border-radius: 4px;
+    white-space: nowrap;
+    display: none;
+    z-index: 10000;
+}
+
+[data-tooltip]:hover:before {
+    display: block;
 }

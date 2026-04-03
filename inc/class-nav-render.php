@@ -14,7 +14,9 @@ class WPB_OPN_Render {
     }
 
     public static function add_nav_attributes($output, $obj, $atts) {
-        error_log("shortcut output: " . print_r($atts, true));
+        // error_log("shortcut atts: " . print_r($atts, true));
+        // error_log("shortcut output: " . print_r($output, true));
+
         if ($obj->settings('base') !== 'vc_row') return $output;
 
         $nav_label = $atts['nav_label'] ?? '';
