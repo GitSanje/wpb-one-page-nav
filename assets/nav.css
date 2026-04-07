@@ -169,11 +169,18 @@
 .opn-tree-node {
     margin-bottom: 8px;
     animation: slideIn 0.2s ease;
+     cursor: grab;
    
 }
 
+.opn-tree-node.opn-dragging {
+    opacity: 0.4;
+}
 .opn-tree-node.active-node {
    display: block;
+}
+.opn-tree-node.opn-drag-over {
+    border: 2px dashed #0073aa;
 }
 
 @keyframes slideIn {
@@ -195,7 +202,7 @@
     padding: 8px 10px;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
-    cursor: pointer;
+  
     transition: all 0.2s ease;
     border: 1px solid rgba(255, 255, 255, 0.05);
     position: relative;
@@ -338,6 +345,41 @@
     100% {
         background-position: 1000px 0;
     }
+}
+/* Drag/Drop */
+
+.opn-tree-node,
+.opn-custom-navbar > a {
+    position: relative;
+}
+
+.drop-before::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #0073aa;
+}
+
+.drop-after::after {
+    content: "";
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #0073aa;
+}
+
+.drop-inside {
+    outline: 2px dashed #0073aa;
+    background: rgba(0, 115, 170, 0.08);
+}
+
+.opn-dragging {
+    opacity: 0.5;
 }
 
 .custom-navbar.loading {

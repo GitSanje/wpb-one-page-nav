@@ -28,7 +28,9 @@ class WPB_OPN_Frontend {
               array(
                 'plugin_url' => $plugin_url,
                 'ajax_url' => admin_url('admin-ajax.php'),
-                'icon_path' => $plugin_url 
+                'icon_path' => $plugin_url ,
+                'nonce' => wp_create_nonce('wpb_nav_nonce'),
+                'post_id' => get_the_ID(),
               )
          );
         wp_enqueue_style(

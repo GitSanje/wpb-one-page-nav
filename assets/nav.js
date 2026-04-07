@@ -152,6 +152,7 @@ class Navbar {
                 const node = document.createElement("div");
                 node.classList.add("opn-tree-node");
                 node.dataset.navModelId = child.id;
+                node.setAttribute("draggable", true);
 
                 const label = document.createElement("div");
                 label.className = "opn-tree-label";
@@ -241,6 +242,8 @@ class Navbar {
                 })
             })
 
+  
+
 
 
         }
@@ -310,32 +313,73 @@ const DROP_RULES = {
 
 class DragDropManager {
        
-    constructor(vc){
+    constructor(vc,tree, navbar){
         this.vc = vc;
+        this.tree = tree
+        this.navbar = navbar.nav
+        
         this.draggedElement = null;
         this.draggedId  = null;
         this.dragOverElement = null;
         this.isDragging = false;
     }
+     init() {
+        this.enableDragging();
+    }
 
    enableDragging(){
-     this.vc.shortcodes.models.forEach( model => {
-        const el = document.querySelector(`[data-model-id="${model.id}"]`);
-        if (!el) return
+         this.navbar.addEventListener("dragstart", (e) => {
+            const node = e.target.closest(".opn-tree-node");
+             if (!node) return;
+             this.draggedId = node.dataset.navModelId;
+             console.log(`Dragging element ${node.dataset.navModelId}`);
+             
+             e.dataTransfer.effectAllowed = "move";
+             e.dataTransfer.setData("text/plain", this.draggedId);
+             node.classList.add("opn-dragging")
+               this.isDragging = true;
+         })
+          this.navbar.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
 
-        el.setAttribute("draggable", true);
-        el.addEventListener('dragstart', (e) => {
-            this.draggedId  = model.id;
-             this.draggedEl = el;
 
-              e.dataTransfer.effectAllowed = "move";
-            el.classList.add("opn-dragging");
+            const node = e.target.closest(".opn-tree-node");
+            if (!node) return;
 
-        })
+            node.classList.add("opn-drag-over");
+        });
+        this.navbar.addEventListener("dragleave", (e) => {
+            const node = e.target.closest(".opn-tree-node");
+            if (!node) return;
 
+            node.classList.remove("opn-drag-over");
+        });
+         this.navbar.addEventListener("drop", (e) => {
+            e.preventDefault();
 
-     })
+            const targetNode = e.target.closest(".opn-tree-node");
+            if (!targetNode) return;
+
+            this.handleDrop(targetNode, e);
+             this.clearIndicators();
+        });
+
    }
+
+   clearIndicators() {
+    document.querySelectorAll(".opn-drag-over").forEach(el => {
+        el.classList.remove("opn-drag-over");
+    });
+    document.querySelectorAll(".opn-dragging").forEach(el => {
+        el.classList.remove("opn-dragging");
+    });
+ }
+
+
+
+    
+   
 
    getDropPosition(targetEl, e ) {
         const rect = targetEl.getBoundingClientRect();
@@ -354,32 +398,46 @@ class DragDropManager {
        if (!rules.parents.includes(targetType) && !rules.parents.includes("*")) {
             return false;
         }
-
         return true;
     }
 
-   handleDrop(sourceEl, targetEl, event){
-         const sourceId = sourceEl.dataset.modelId;
-         const targetId = targetEl.dataset.modelId;
+   handleDrop( targetEl, event){
+         const sourceId = this.draggedId;
+         const targetId = targetEl.dataset.navModelId;
          if (sourceId === targetId) return;
-         const sourceModel = vc.shortcodes.get(sourceId);
-         const targetModel = vc.shortcodes.get(targetId);
+         
+        const sourceModel = this.vc.shortcodes.get(sourceId);
+        const targetModel = this.vc.shortcodes.get(targetId);
          if (!sourceModel || !targetModel) return;
         const position = this.getDropPosition(targetEl, event);
-        
+         console.log(`Position is ${position}`);
+       console.log(`Source: ${sourceModel.id} (${sourceModel.get('shortcode')}) | Target: ${targetModel.id} (${targetModel.get('shortcode')})`);
+         
         let newParentId;
         let newIndex;
         // ============================
         // INSIDE DROP
         // ============================
 
+       const currentParentId = sourceModel.get("parent_id");
+        const targetParentId = targetModel.get("parent_id");
+
+        console.log(`CurrentParent ID: ${currentParentId} TargetParentId: ${targetParentId}`);
+        
+
+
         if( position === "inside"){
              if (!this.isValidDrop(sourceModel, targetModel)) {
-            console.warn("Invalid drop inside");
-            return;
-           }
+              console.warn("Invalid drop inside");
+              return;
+             }
             newParentId = targetId;
 
+            // if drop inside the current parent 
+            if( targetId === currentParentId ){
+                return
+            }
+            //Get childrens of target node
             const children = vc.shortcodes.where({ parent_id: targetId });
             newIndex = children.length;
         }
@@ -387,24 +445,73 @@ class DragDropManager {
         // BEFORE / AFTER DROP
         // ============================
         else{
-              const parentId = targetModel.get("parent_id");
+             
 
-            if (!this.isValidDrop(sourceModel, vc.shortcodes.get(parentId))) {
+            if (!this.isValidDrop(sourceModel, vc.shortcodes.get(targetParentId))) {
                 console.warn("Invalid sibling drop");
                 return;
             }
-
-              const siblings = vc.shortcodes.where({ parent_id: parentId });
+               
+              const siblings = vc.shortcodes.where({ parent_id: targetParentId });
 
              const targetIndex = siblings.findIndex(m => m.id === targetId);
 
-            newParentId = parentId;
+            newParentId = targetParentId;
             newIndex = position === "before"
                 ? targetIndex
                 : targetIndex + 1;
+             
         }
+           console.log(`new Index :${newIndex}`);
+        
+         // Update navbar instantly (visual feedback)
+           this.moveNavbarNode(sourceId, targetId, position);
+           //Update WPBakery model (REAL SOURCE OF TRUTH)
+        this.applyModelMove(sourceId, newParentId, newIndex);
 
    }
+
+
+   moveNavbarNode(sourceId,targetId, position){
+         const sourceNode = this.navbar.querySelector(`[data-nav-model-id="${sourceId}"]`);
+        const targetNode = this.navbar.querySelector(`[data-nav-model-id="${targetId}"]`);
+        if (!sourceNode || !targetNode) return;
+        if (position === "inside"){
+              targetNode.appendChild(sourceNode);
+        }else if (position === "before") {
+              // MOVES sourceNode BEFORE targetNode (as previous sibling)
+            targetNode.parentNode.insertBefore(sourceNode, targetNode);
+        } else {
+             // MOVES sourceNode AFTER targetNode (as next sibling)
+            targetNode.parentNode.insertBefore(sourceNode, targetNode.nextSibling);
+        }
+   }
+  
+  applyModelMove(sourceId, newParentId, newIndex){
+        const sourceModel = this.vc.shortcodes.get(sourceId);
+         if (!sourceModel) return;
+         // remove from collection
+
+          // Get the current view to remove its element
+          const sourceView =sourceModel.view;
+          if (sourceView && sourceView.$el) {
+           sourceView.$el.remove(); // Remove old DOM
+         }
+        this.vc.shortcodes.remove(sourceModel);
+        // update parent
+        sourceModel.set("parent_id", newParentId);
+       
+        this.vc.shortcodes.add(sourceModel, { at: newIndex });
+        
+        // Update storage with the model directly 
+        this.vc.storage.update(sourceModel);
+        
+        console.log(`✔ Model moved & saved → ${sourceId} → parent ${newParentId} @ ${newIndex}`);
+
+  }
+
+  
+
  
 
      
@@ -421,9 +528,13 @@ document.addEventListener("DOMContentLoaded", () => {
         tree.build();
 
         const navbar = new Navbar(tree);
+    
 
         setTimeout(() => {
+                
             navbar.init();
+            const dragManager = new DragDropManager(vc,tree,navbar)
+            dragManager.init();
         }, 500);
 
     }, 2000);

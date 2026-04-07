@@ -21,15 +21,18 @@ class OnePageNavPlugin {
 	 */
 
     private function init() {
-
+        
         new WPB_OPN_Settings ();
         // Init row render hooks
         WPB_OPN_Render::init();
         // Init frontend assets
         WPB_OPN_Frontend::init();
+
+        
+    
+    }
+
+  
       
 
     }
-
-
-}
