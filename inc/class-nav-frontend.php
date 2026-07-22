@@ -12,18 +12,57 @@ class WPB_OPN_Frontend {
 
     public static  function enqueue_assets() {
          $plugin_url = plugin_dir_url(dirname(__FILE__));
-              
 
         wp_enqueue_script(
-            'wpb-opn-js',
-             $plugin_url . 'assets/nav.js',
-            ['jquery'], // jQuery dependency
+            'wpb-opn-drag-drop-controller',
+            $plugin_url . 'assets/js/drag-drop-controller.js',
+            ['jquery'],
             '1.0',
             true
         );
-         // Add localized data 
+
+        wp_enqueue_script(
+            'wpb-opn-navbar-controller',
+            $plugin_url . 'assets/js/navbar-controller.js',
+            ['wpb-opn-drag-drop-controller'],
+            '1.0',
+            true
+        );
+
+        wp_enqueue_script(
+            'wpb-opn-tree-manager',
+            $plugin_url . 'assets/js/tree-manager.js',
+            ['wpb-opn-navbar-controller'],
+            '1.0',
+            true
+        );
+
+        wp_enqueue_script(
+            'wpb-opn-wpmove-adapter',
+            $plugin_url . 'assets/js/wpmove-adapter.js',
+            ['wpb-opn-tree-manager'],
+            '1.0',
+            true
+        );
+
+        wp_enqueue_script(
+            'wpb-opn-drag-drop-manager',
+            $plugin_url . 'assets/js/drag-drop-manager.js',
+            ['wpb-opn-wpmove-adapter'],
+            '1.0',
+            true
+        );
+
+        wp_enqueue_script(
+            'wpb-opn-main',
+            $plugin_url . 'assets/js/main.js',
+            ['wpb-opn-drag-drop-manager'],
+            '1.0',
+            true
+        );
+
          wp_localize_script(
-             'wpb-opn-js',
+             'wpb-opn-main',
              'wpbOnePageNav',
               array(
                 'plugin_url' => $plugin_url,
@@ -33,9 +72,10 @@ class WPB_OPN_Frontend {
                 'post_id' => get_the_ID(),
               )
          );
+
         wp_enqueue_style(
             'wpb-opn-css',
-            $plugin_url . 'assets/nav.css',            
+            $plugin_url . 'assets/nav.css',
             [],
             '1.0'
         );

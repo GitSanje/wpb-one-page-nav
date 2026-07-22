@@ -22,7 +22,7 @@ class ShortCodeTree {
 
             const { shortcode, parent_id: parentId, id, params } = model.attributes;
 
-            if (shortcode === 'vc_row' && params.show_in_nav === 'yes') {
+            if (shortcode === 'vc_row' ) {
                 const row = document.querySelector(`[data-model-id="${id}"]`);
                 // Set Row label attribute in row div dataset              
                 row.dataset.navLabel = params.nav_label;
@@ -34,17 +34,31 @@ class ShortCodeTree {
             }
             this.map.get(parentId).push({
                 id,
-                shortcode
+                shortcode,
+                order: model.get("order")
+
             })
 
         })
 
+        for (const [parent, children] of this.map) {
+
+            children.sort(
+                (a,b) => a.order - b.order
+            );
+
+        }
+
         console.log("parent => children", this.map);
 
-    }
+    } 
+
 
     getChildren(parentId) {
         return this.map.get(parentId) || [];
+    }
+    hasChildren(parentId) {
+        return this.map.has(parentId) && this.map.get(parentId).length > 0;
     }
 }
 
@@ -114,6 +128,8 @@ class Navbar {
             img.src = wpbOnePageNav.plugin_url + 'assets/imgs/element-icon-row.svg';
             img.alt = label;
             img.classList.add("opn-nav-icon");
+
+            // img.setAttribute("draggable", true); 
 
             // Label
             const textSpan = document.createElement("span");
@@ -198,7 +214,7 @@ class Navbar {
             link.classList.add("active");
 
             window.scrollTo({
-                top: target.offsetTop - 60,
+                top: target.offsetTop,
                 behavior: "smooth"
             });
 
@@ -280,327 +296,504 @@ class Navbar {
         });
     }
 
+
+    render() {
+
+        this.collectSections();
+
+        this.buildNavbar();
+
+        this.attachEvents();
+
+    }
+
 }
-
-
-
-
-/*
-   ============================================
-   DRAG AND DROP MANAGER
-   ============================================
-   */
 
 
 const DROP_RULES = {
     vc_row: {
-        parents: [null], // only root
-        children: ["vc_column", "vc_column_inner"]
+        parents: [null]
     },
     vc_column: {
-        parents: ["vc_row"],
-        children: ["*"] // allow all elements inside
+        parents: ["vc_row"]
     },
     vc_column_inner: {
-        parents: ["vc_column"],
-        children: ["*"]
+        parents: ["vc_column"]
     },
     "*": {
-        parents: ["vc_column", "vc_column_inner"],
-        children: []
+        parents: ["vc_column", "vc_column_inner"]
     }
 };
 
+
+
 class DragDropManager {
+     
+     constructor(vc, tree, navbar) {
 
-    constructor(vc, tree, navbar) {
         this.vc = vc;
-        this.tree = tree
-        this.navbar = navbar.nav
+        this.tree = tree;
+        this.navbar = navbar.nav;
+        this.navbarInstance = navbar;
 
-        this.draggedElement = null;
         this.draggedId = null;
-        this.dragOverElement = null;
-        this.isDragging = false;
-    }
-    init() {
-        this.enableDragging();
     }
 
-    enableDragging() {
-        this.navbar.addEventListener("dragstart", (e) => {
-            const node = e.target.closest(".opn-tree-node");
-            if (!node) return;
-            this.draggedId = node.dataset.navModelId;
-            console.log(`Dragging element ${node.dataset.navModelId}`);
+     init() {
 
-            e.dataTransfer.effectAllowed = "move";
-            e.dataTransfer.setData("text/plain", this.draggedId);
-            node.classList.add("opn-dragging")
-            this.isDragging = true;
-        })
-        this.navbar.addEventListener("dragover", (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = "move";
-
-
-            const node = e.target.closest(".opn-tree-node");
-            if (!node) return;
-
-            node.classList.add("opn-drag-over");
-        });
-        this.navbar.addEventListener("dragleave", (e) => {
-            const node = e.target.closest(".opn-tree-node");
-            if (!node) return;
-
-            node.classList.remove("opn-drag-over");
-        });
-        this.navbar.addEventListener("drop", (e) => {
-            e.preventDefault();
-
-            const targetNode = e.target.closest(".opn-tree-node");
-            if (!targetNode) return;
-
-            this.handleDrop(targetNode, e);
-            this.clearIndicators();
-        });
+        this.bindDragEvents();
+        this.bindCollectionEvents();
 
     }
 
+    
+
+      /*
+    =====================================
+    Backbone Sync
+    =====================================
+    */
+
+    bindCollectionEvents() {
+
+        this.vc.shortcodes.on(
+            "change:parent_id change:order add remove",
+            () => {
+                this.tree.build();
+                this.navbarInstance.render();
+                console.log("Collection changed, tree and navbar updated");
+            }
+        );
+
+    }
+
+        /*
+    =====================================
+    Drag Events
+    =====================================
+    */
+
+    bindDragEvents() {
+
+        this.navbar.addEventListener("dragstart", this.onDragStart.bind(this));
+
+        this.navbar.addEventListener("dragover", this.onDragOver.bind(this));
+
+        this.navbar.addEventListener("dragleave", this.onDragLeave.bind(this));
+
+        this.navbar.addEventListener("drop", this.onDrop.bind(this));
+
+    }
+    onDragStart(e) {
+
+        const node = e.target.closest(".opn-tree-node");
+
+        if (!node) return;
+
+        this.draggedId = node.dataset.navModelId;
+
+        e.dataTransfer.effectAllowed = "move";
+
+        node.classList.add("opn-dragging");
+
+    }
+    onDragOver(e) {
+
+        e.preventDefault();
+
+        const node = e.target.closest(".opn-tree-node");
+
+        if (!node) return;
+
+        node.classList.add("opn-drag-over");
+
+    }
+
+    onDragLeave(e) {
+
+        const node = e.target.closest(".opn-tree-node");
+
+        if (!node) return;
+
+        node.classList.remove("opn-drag-over");
+
+    }
+
+    onDrop(e) {
+
+        e.preventDefault();
+
+        const targetNode =
+            e.target.closest(".opn-tree-node");
+
+        if (!targetNode) return;
+
+        this.handleDrop(
+            this.draggedId,
+            targetNode.dataset.navModelId,
+            this.getDropPosition(targetNode, e)
+        );
+
+        this.clearIndicators();
+
+    }
+     
     clearIndicators() {
-        document.querySelectorAll(".opn-drag-over").forEach(el => {
-            el.classList.remove("opn-drag-over");
-        });
-        document.querySelectorAll(".opn-dragging").forEach(el => {
-            el.classList.remove("opn-dragging");
-        });
+
+        this.navbar
+            .querySelectorAll(
+                ".opn-drag-over,.opn-dragging"
+            )
+            .forEach(el => {
+                el.classList.remove(
+                    "opn-drag-over",
+                    "opn-dragging"
+                );
+            });
+
+    }
+
+      /*
+    =====================================
+    Drop Logic
+    =====================================
+    */
+
+    handleDrop(sourceId, targetId, position) {
+
+        if (sourceId === targetId) {
+            return;
+        }
+
+        const source =
+            this.vc.shortcodes.get(sourceId);
+
+        const target =
+            this.vc.shortcodes.get(targetId);
+
+        if (!source || !target) {
+            return;
+        }
+
+        if (this.isDescendant(sourceId, targetId)) {
+            console.warn("Cannot drop into descendant");
+            return;
+        }
+
+        const moveData =
+            this.calculateMove(
+                source,
+                target,
+                position
+            );
+
+        if (!moveData) {
+            return;
+        }
+
+        this.moveModel(
+            source,
+            moveData.parentId,
+            moveData.index
+        );
+
+    }
+
+
+     /*
+    =====================================
+    Calculate Move
+    =====================================
+    */
+
+    calculateMove(
+        sourceModel,
+        targetModel,
+        position
+    ) {
+
+        const sourceParent =
+            sourceModel.get("parent_id");
+
+        const targetParent =
+            targetModel.get("parent_id");
+
+        let parentId;
+        let index;
+
+        if (
+            position === "inside" &&
+            this.isValidDrop(
+                sourceModel,
+                targetModel
+            )
+        ) {
+
+            parentId = targetModel.id;
+
+            index =
+                this.getChildren(parentId)
+                    .length;
+
+        } else {
+
+            parentId = targetParent;
+
+            if (
+                !this.isValidDrop(
+                    sourceModel,
+                    this.vc.shortcodes.get(parentId)
+                )
+            ) {
+                return null;
+            }
+
+            const siblings =
+                this.getChildren(parentId);
+
+            const targetIndex =
+                siblings.findIndex(
+                    m => m.id === targetModel.id
+                );
+
+            const sourceIndex =
+                siblings.findIndex(
+                    m => m.id === sourceModel.id
+                );
+
+            if (
+                sourceParent === parentId &&
+                sourceIndex < targetIndex
+            ) {
+
+                index =
+                    position === "before"
+                        ? targetIndex - 1
+                        : targetIndex;
+
+            } else {
+
+                index =
+                    position === "before"
+                        ? targetIndex
+                        : targetIndex + 1;
+            }
+
+        }
+
+        return {
+            parentId,
+            index
+        };
+
+    }
+
+      /*
+    =====================================
+    Backbone Move
+    =====================================
+    */
+
+    moveModel(
+    sourceModel,
+    newParentId,
+    newIndex
+) {
+
+    const oldParentId =
+        sourceModel.get("parent_id");
+
+    const sameParent =
+        oldParentId === newParentId;
+
+    sourceModel.set(
+        "parent_id",
+        newParentId
+    );
+
+    if (!sameParent) {
+
+        this.reindexParent(
+            oldParentId
+        );
+
+    }
+
+    this.reindexParent(
+        newParentId,
+        sourceModel,
+        newIndex
+    );
+
+    if (sourceModel.view) {
+    sourceModel.view.render();
+}
+
+sourceModel.trigger("change");
+}
+
+    reindexParent(
+        parentId,
+        movedModel = null,
+        targetIndex = null
+    ) {
+
+        let children =
+            this.getChildren(parentId);
+
+        if (movedModel) {
+
+            children =
+                children.filter(
+                    m => m.id !== movedModel.id
+                );
+
+            children.splice(
+                targetIndex,
+                0,
+                movedModel
+            );
+
+        }
+
+        children.forEach(
+            (model, index) => {
+
+                model.set(
+                    "order",
+                    index + 1
+                );
+
+                this.vc.storage.update(
+                    model
+                );
+
+            }
+        );
+
     }
 
 
 
 
+     /*
+    =====================================
+    Helpers
+    =====================================
+    */
 
+    getChildren(parentId) {
 
-    getDropPosition(targetEl, e) {
-        const rect = targetEl.getBoundingClientRect();
-        const offsetY = e.clientY - rect.top
-        if (offsetY < rect.height * 0.25) return "before";
-        if (offsetY > rect.height * 0.75) return "after";
-        return "inside";
+        return this.vc.shortcodes
+            .where({
+                parent_id: parentId
+            })
+            .sort(
+                (a, b) =>
+                    a.get("order") -
+                    b.get("order")
+            );
+
     }
-    isValidDrop(sourceModel, targetModel) {
-        const sourceType = sourceModel.get("shortcode");
-        const targetType = targetModel.get("shortcode");
+    isValidDrop(
+        sourceModel,
+        targetModel
+    ) {
 
-        const rules = DROP_RULES[sourceType] || DROP_RULES["*"];
-
-        // Check parent constraint
-        if (!rules.parents.includes(targetType) && !rules.parents.includes("*")) {
+        if (!targetModel) {
             return false;
         }
-        return true;
+
+        const sourceType =
+            sourceModel.get("shortcode");
+
+        const targetType =
+            targetModel.get("shortcode");
+
+        const rules =
+            DROP_RULES[sourceType] ||
+            DROP_RULES["*"];
+
+        return (
+            rules.parents.includes(
+                targetType
+            ) ||
+            rules.parents.includes("*")
+        );
+
     }
 
-    handleDrop(targetEl, event) {
-        const sourceId = this.draggedId;
-        const targetId = targetEl.dataset.navModelId;
-        if (sourceId === targetId) return;
+    isDescendant(
+        sourceId,
+        targetId
+    ) {
 
-        const sourceModel = this.vc.shortcodes.get(sourceId);
-        const targetModel = this.vc.shortcodes.get(targetId);
-        if (!sourceModel || !targetModel) return;
-        const position = this.getDropPosition(targetEl, event);
-        console.log(`Position is ${position}`);
-        console.log(`Source: ${sourceModel.id} (${sourceModel.get('shortcode')}) | Target: ${targetModel.id} (${targetModel.get('shortcode')})`);
+        let current =
+            this.vc.shortcodes.get(targetId);
 
-        let newParentId;
-        let newIndex;
-        // ============================
-        // INSIDE DROP
-        // ============================
+        while (current) {
 
-        const currentParentId = sourceModel.get("parent_id");
-        const targetParentId = targetModel.get("parent_id");
-
-        console.log(`CurrentParent ID: ${currentParentId} TargetParentId: ${targetParentId}`);
-        // if drop inside the current parent 
-        if (position === "inside" && targetId === currentParentId) {
-            return;
-        }
-
-        let isValid = false;
-        let shouldUseAsChild = false;
-
-        if (position === "inside") {
-            isValid = this.isValidDrop(sourceModel, targetModel);
-            shouldUseAsChild = isValid;
-
-        }
-        // ============================
-        // BEFORE / AFTER DROP
-        // ============================
-        else {
-
-            shouldUseAsChild = this.isValidDrop(sourceModel, targetModel);
-          
-            
-            if (shouldUseAsChild) {
-                isValid = true;
-                // Early return if dropping inside current parent
-                if (targetId === currentParentId) {
-                    return;
-                }
-            } else {
-                isValid = this.isValidDrop(sourceModel, vc.shortcodes.get(targetParentId));
-                shouldUseAsChild = false;
+            if (
+                current.get("parent_id") ===
+                sourceId
+            ) {
+                return true;
             }
 
+            current =
+                this.vc.shortcodes.get(
+                    current.get("parent_id")
+                );
         }
 
-
-        if (!isValid) {
-            console.warn("Invalid drop");
-            return;
-        }
-       let isCurrentGreater;
-        if (shouldUseAsChild) {
-         
-            
-            newParentId = targetId;
-            const children = vc.shortcodes.where({ parent_id: targetId });
-            newIndex = children.length;
-        } else {
-            const siblings = vc.shortcodes.where({ parent_id: targetParentId });
-            console.log(`siblings: ${siblings.map(sbl => `${sbl.get('order')}:${sbl.get('shortcode')}`).join(', ')}`);            
-            const targetIndex = siblings.findIndex(m => m.id === targetId);
-            newParentId = targetParentId;
-            // currentIndex on the same parent with the target index
-             const currentIndex = vc.shortcodes.where({ parent_id: currentParentId }).findIndex(m => m.id === sourceId) || -1;
-
-             console.log(`CurrentIndex = ${currentIndex} TargetIndex = ${targetIndex}`);
-              isCurrentGreater = currentIndex > targetIndex;
-            if( (currentParentId === newParentId && isCurrentGreater ) || currentParentId !== targetParentId ){
-                  newIndex = position === "before" ? targetIndex : targetIndex + 1;
-            }
-            else if (currentParentId === newParentId && currentIndex < targetIndex){
-                
-                 newIndex = position === "before" ? targetIndex - 1 : targetIndex ;
-            }
-
-        }
-
-        console.log(`new Index :${newIndex}`);
-
-        // Update navbar instantly (visual feedback)
-        this.moveNavbarNode(sourceId, targetId, position, newIndex,shouldUseAsChild);
-        //Update WPBakery model (REAL SOURCE OF TRUTH)
-        this.applyModelMove(sourceId, newParentId, newIndex, isCurrentGreater);
+        return false;
 
     }
 
 
-    moveNavbarNode(sourceId, targetId, position, newIndex,shouldUseAsChild) {
-        const sourceNode = this.navbar.querySelector(`[data-nav-model-id="${sourceId}"].opn-tree-node`);
-        const targetNode = this.navbar.querySelector(`[data-nav-model-id="${targetId}"].opn-tree-node`);
-        if (!sourceNode || !targetNode) return;
-          
-        if(shouldUseAsChild){
-           if (newIndex == 0) {
-                const treeContainer = document.createElement('div');
-                treeContainer.classList.add("opn-tree-children", "active-node");
-                treeContainer.dataset.navModelId = targetId;
-                treeContainer.appendChild(sourceNode);
-                targetNode.appendChild(treeContainer);
-            } else {
-                const treeContainer = this.navbar.querySelector(`[data-nav-model-id="${targetId}"].opn-tree-children.active-node`);
-                 treeContainer.appendChild(sourceNode);
-                
-            }
-        }else{
-          
-            if (position === "before") {
-                // MOVES sourceNode BEFORE targetNode (as previous sibling)
-                targetNode.parentNode.insertBefore(sourceNode, targetNode);
-            } else {
-                // MOVES sourceNode AFTER targetNode (as next sibling)
-                targetNode.parentNode.insertBefore(sourceNode, targetNode.nextSibling);
-            }
+
+     getDropPosition(
+        targetEl,
+        event
+    ) {
+
+        const rect =
+            targetEl.getBoundingClientRect();
+
+        const offsetY =
+            event.clientY - rect.top;
+
+        if (offsetY < rect.height * 0.25) {
+            return "before";
         }
+
+        if (offsetY > rect.height * 0.75) {
+            return "after";
+        }
+
+        return "inside";
 
     }
-
-    applyModelMove(sourceId, newParentId, newIndex, isCurrentGreater) {
-        const sourceModel = this.vc.shortcodes.get(sourceId);
-        const oldParentId = sourceModel.get('parent_id');
-        
-        console.log(`sourcemodel ${sourceModel.get('shortcode')} sourceId :${sourceId} Order : ${sourceModel.get('order')}`);
-
-        if (!sourceModel) return;
-
-        // Get the current view to remove its element
-        const sourceView = sourceModel.view;
-        if (sourceView && sourceView.$el) {
-            sourceView.$el.remove(); // Remove old DOM
-        }
-        
-        sourceModel.set("parent_id", newParentId);
-        
-        // Remove from old position but model still exists
-        this.vc.shortcodes.remove(sourceModel);
-        
-        // Get all children of the NEW parent (excluding the model we just removed)
-        let children = this.vc.shortcodes
-                          .where({ parent_id: newParentId })
-                           .sort((a, b) => a.get('order') - b.get('order'));
-
-
-        
-        // Add sourceModel to the children array
-        children.push(sourceModel);
-
-        const parentModel = this.vc.shortcodes.get(newParentId);
-        const parentOrder = parentModel ? parentModel.get('order') : 0;
-  
-
-        const currentIndex = children.findIndex(model => model.get('id') === sourceId);
-        if (currentIndex === -1 ||( currentIndex === newIndex && oldParentId === newParentId)) {
-            // Add back to collection and return
-            this.vc.shortcodes.add(children, { merge: true });
-            children.forEach(model => {
-                this.vc.storage.update(model);
-            });
-            return;
-        }
-        
-        // Reorder array
-        children.splice(currentIndex, 1);
-        children.splice(newIndex, 0, sourceModel);
-
-        children.forEach((model, idx) => {
-                model.set('order', parentOrder + idx+1);
-            });
-
-      
-
-        console.log(children, 'after update order');
-
-        // Add all children back to collection
-        this.vc.shortcodes.add(children, { merge: true });
-
-        // Update storage
-        children.forEach(model => {
-            this.vc.storage.update(model);
-        });
-
-        console.log(`✔ Model moved & saved → ${sourceId} → parent ${newParentId} @ ${newIndex}`);
-    }
-
-
-
-
-
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 document.addEventListener("DOMContentLoaded", () => {
 
