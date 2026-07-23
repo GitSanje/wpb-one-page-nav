@@ -33,6 +33,9 @@ class WpMoveAdapter {
         if (!$source || !$source.length || !$target || !$target.length)
             return false;
 
+        console.log(session, $source, $target);
+        
+
         const container =
             this.resolveContainer(
                 $target,
@@ -248,14 +251,14 @@ class WpMoveAdapter {
         if (!container || !container.length) {
 
             container =
-                $("#wpbakery_content");
+                jQuery("#wpbakery_content");
 
         }
 
         container.children("[data-model-id]")
             .each(function(index){
 
-                $(this)
+                jQuery(this)
                     .data("model")
                     .save({
 

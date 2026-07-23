@@ -273,7 +273,6 @@ class AutoScroller {
         }
 
         const rect =
-
             this.container.getBoundingClientRect();
 
         if (!rect || !Number.isFinite(rect.top) || !Number.isFinite(rect.bottom)) {
@@ -389,13 +388,9 @@ class DropResolver {
             document
 
                 .elementFromPoint(
-
                     event.clientX,
-
                     event.clientY
-
                 )
-
                 ?.closest(
 
                     ".opn-tree-node"
@@ -408,9 +403,7 @@ class DropResolver {
         const model =
 
             this.tree.getModel(
-
                 row.dataset.id
-
             );
 
         if (!model)
@@ -426,11 +419,8 @@ class DropResolver {
             element: row,
 
             position: this.resolvePosition(
-
                 row,
-
                 event
-
             )
 
         };

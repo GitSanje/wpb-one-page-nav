@@ -24,13 +24,9 @@ class Navbar {
     /*====================================================*/
 
     init() {
-
         this.createLayout();
-
         this.bindEvents();
-
         this.render();
-
     }
 
     /*====================================================*/
@@ -135,19 +131,12 @@ class Navbar {
         );
 
         this.nav
-
             .querySelector(
-
                 ".opn-collapse-nav"
-
             )
-
             .onclick = () => {
-
                 this.state.collapseAll();
-
                 this.render();
-
             };
 
         this.nav
@@ -181,14 +170,10 @@ class Navbar {
         this.tree
             .getChildren(null)
             .forEach(model => {
-
                 const node =
                     this.createNode(model);
-
                 this.treeRoot.appendChild(
-
                     node.el
-
                 );
 
             });
@@ -219,11 +204,8 @@ class Navbar {
         node.render();
 
         this.nodeMap.set(
-
             String(model.id),
-
             node
-
         );
 
         return node;
@@ -376,15 +358,12 @@ class Navbar {
             return;
 
         node.row.classList.add(
-
             "is-selected"
-
         );
 
         this.syncEditorSelection(resolvedId);
 
         SidebarUtils.scrollIntoView(
-
             node.row
 
         );
@@ -448,11 +427,11 @@ class TreeNodeView {
 
         this.childrenViews = [];
 
-        this.el =
+       this.el =
             document.createElement("div");
 
         this.el.className =
-            "opn-tree-item";
+            "opn-tree-item"; 
 
     }
 
@@ -482,9 +461,7 @@ class TreeNodeView {
         );
 
         this.el.appendChild(
-
             this.row
-
         );
 
         this.renderChildren();
@@ -503,47 +480,35 @@ class TreeNodeView {
 
         const hasChildren =
             this.tree.hasChildren(
-
                 this.model.id
-
             );
 
         if (!hasChildren) {
 
             btn.classList.add(
-
                 "is-empty"
-
             );
 
             btn.textContent = "";
-
             return btn;
 
         }
 
         btn.textContent =
             this.state.isExpanded(
-
                 this.model.id
-
             )
 
                 ? "▼"
-
                 : "▶";
 
         btn.onclick = e => {
 
             e.stopPropagation();
-
             this.state.toggle(
-
                 this.model.id
-
             );
-
-            this.navbar.render();
+          this.navbar.render();
 
         };
 
@@ -592,9 +557,7 @@ class TreeNodeView {
         span.onclick = () => {
 
             this.state.select(
-
                 this.model.id
-
             );
 
             this.bus.trigger(
@@ -606,11 +569,8 @@ class TreeNodeView {
             );
 
             this.bus.trigger(
-
                 "node:selected",
-
                 this.model
-
             );
 
         };
@@ -626,25 +586,16 @@ class TreeNodeView {
         if (
 
             !this.tree.hasChildren(
-
                 this.model.id
-
             )
-
         ) {
-
             return;
-
         }
-
         if (
 
             !this.state.isExpanded(
-
                 this.model.id
-
             )
-
         ) {
 
             return;
@@ -662,17 +613,13 @@ class TreeNodeView {
             container.classList.add("is-expanded");
 
         } else {
-
             container.classList.remove("is-expanded");
-
         }
 
         this.tree
 
             .getChildren(
-
                 this.model.id
-
             )
 
             .forEach(child => {

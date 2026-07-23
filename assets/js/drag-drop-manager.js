@@ -22,9 +22,7 @@ class DragDropManager {
     }
 
     setAdapter(adapter) {
-
         this.adapter = adapter;
-
     }
 
     bind() {
