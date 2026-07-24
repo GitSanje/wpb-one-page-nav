@@ -19,6 +19,23 @@ class Navbar {
         this.nav.className =
             "opn-custom-navbar";
 
+         this.position = {
+            left: 24,
+            top: 80
+        };
+
+        this.dragging = false;
+
+        this.dragOffset = {
+            x: 0,
+            y: 0
+        };
+
+        this.isCollapsed = false;
+
+        this.handlePointerMove = this.handlePointerMove.bind(this);
+        this.handlePointerUp = this.handlePointerUp.bind(this);
+
     }
 
     /*====================================================*/
@@ -43,17 +60,29 @@ class Navbar {
 
         header.innerHTML = `
 
-            <h3>📑 Page Navigation</h3>
+            <div class="opn-navbar-heading">
+
+                <button class="opn-drag-handle" type="button" title="Drag to move navbar">⋮⋮</button>
+
+                <h3>📑 Page Navigation</h3>
+
+            </div>
 
             <div class="opn-navbar-actions">
 
-                <button class="opn-collapse-nav" title="Collapse navbar items">
+                <button class="opn-collapse-panel" type="button" title="Collapse or expand navbar">
+
+                    ▾
+
+                </button>
+
+                <button class="opn-collapse-nav" type="button" title="Collapse navbar items">
 
                     Collapse Nav
 
                 </button>
 
-                <button class="opn-collapse-rows" title="Collapse VC rows">
+                <button class="opn-collapse-rows" type="button" title="Collapse VC rows">
 
                     Collapse Rows
 
@@ -82,6 +111,8 @@ class Navbar {
             this.nav
 
         );
+
+        this.applyLayoutState();
 
     }
 
@@ -130,6 +161,12 @@ class Navbar {
 
         );
 
+        const dragHandle = this.nav.querySelector(".opn-drag-handle");
+
+        if (dragHandle) {
+            dragHandle.addEventListener("pointerdown", event => this.startDragging(event));
+        }
+
         this.nav
             .querySelector(
                 ".opn-collapse-nav"
@@ -137,6 +174,13 @@ class Navbar {
             .onclick = () => {
                 this.state.collapseAll();
                 this.render();
+            };
+
+        this.nav
+            .querySelector(".opn-collapse-panel")
+            .onclick = event => {
+                event.preventDefault();
+                this.togglePanel();
             };
 
         this.nav
@@ -168,6 +212,95 @@ class Navbar {
         this.render();
 
     };
+
+    }
+
+    /*====================================================*/
+
+    applyLayoutState() {
+
+        this.nav.style.left = `${this.position.left}px`;
+        this.nav.style.top = `${this.position.top}px`;
+
+        this.nav.classList.toggle("opn-navbar-collapsed", this.isCollapsed);
+
+        const treeRoot = this.nav.querySelector(".opn-navbar-tree");
+
+        if (treeRoot) {
+            treeRoot.style.display = this.isCollapsed ? "none" : "";
+        }
+
+        const panelButton = this.nav.querySelector(".opn-collapse-panel");
+
+        if (panelButton) {
+            panelButton.textContent = this.isCollapsed ? "▸" : "▾";
+            panelButton.title = this.isCollapsed ? "Expand navbar" : "Collapse navbar";
+        }
+
+        const headerTitle = this.nav.querySelector(".opn-navbar-header h3");
+
+        if (headerTitle) {
+            headerTitle.style.display = this.isCollapsed ? "none" : "";
+        }
+
+    }
+
+    /*====================================================*/
+
+    togglePanel() {
+
+        this.isCollapsed = !this.isCollapsed;
+        this.applyLayoutState();
+
+    }
+
+    /*====================================================*/
+
+    startDragging(event) {
+
+        event.preventDefault();
+
+        this.dragging = true;
+        this.dragOffset = {
+            x: event.clientX - this.position.left,
+            y: event.clientY - this.position.top
+        };
+
+        this.nav.classList.add("opn-navbar-dragging");
+
+        document.addEventListener("pointermove", this.handlePointerMove);
+        document.addEventListener("pointerup", this.handlePointerUp, { once: true });
+
+    }
+
+    /*====================================================*/
+
+    handlePointerMove(event) {
+
+        if (!this.dragging) {
+            return;
+        }
+
+        const maxLeft = Math.max(0, window.innerWidth - this.nav.offsetWidth - 8);
+        const maxTop = Math.max(0, window.innerHeight - this.nav.offsetHeight - 8);
+
+        this.position.left = Math.min(maxLeft, Math.max(0, event.clientX - this.dragOffset.x));
+        this.position.top = Math.min(maxTop, Math.max(0, event.clientY - this.dragOffset.y));
+
+        this.nav.style.left = `${this.position.left}px`;
+        this.nav.style.top = `${this.position.top}px`;
+
+    }
+
+    /*====================================================*/
+
+    handlePointerUp() {
+
+        this.dragging = false;
+        this.nav.classList.remove("opn-navbar-dragging");
+
+        document.removeEventListener("pointermove", this.handlePointerMove);
+        document.removeEventListener("pointerup", this.handlePointerUp);
 
     }
 

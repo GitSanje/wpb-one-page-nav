@@ -1,24 +1,24 @@
 .opn-custom-navbar {
     position: fixed;
+    left: 24px;
+    top: 80px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
     background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     padding: 16px;
     border-radius: 16px;
-    z-index: 9999;
+    z-index: 99999;
     box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.3);
     width: 260px;
     max-height: 85vh;
     border: 1px solid rgba(255, 255, 255, 0.1);
     overflow-y: auto;
     backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     overflow-x: hidden;
     box-sizing: border-box;
+    cursor: default;
 }
 
 /* Sidebar shell */
@@ -59,9 +59,42 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     padding-bottom: 12px;
     margin-bottom: 8px;
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.opn-navbar-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.opn-drag-handle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    cursor: grab;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+}
+
+.opn-drag-handle:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.opn-custom-navbar.opn-navbar-dragging {
+    cursor: grabbing;
+    user-select: none;
 }
 
 .opn-navbar-header h3 {
@@ -111,8 +144,11 @@
 .opn-navbar-actions {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
+.opn-collapse-panel,
 .opn-collapse-nav,
 .opn-collapse-rows {
     border: 0;
@@ -122,6 +158,25 @@
     color: #f9fafb;
     cursor: pointer;
     font-size: 11px;
+}
+
+.opn-custom-navbar.opn-navbar-collapsed {
+    width: 154px;
+    padding: 10px;
+    max-height: none;
+}
+
+.opn-custom-navbar.opn-navbar-collapsed .opn-navbar-tree,
+.opn-custom-navbar.opn-navbar-collapsed .opn-collapse-nav,
+.opn-custom-navbar.opn-navbar-collapsed .opn-collapse-rows,
+.opn-custom-navbar.opn-navbar-collapsed .opn-navbar-header h3 {
+    display: none;
+}
+
+.opn-custom-navbar.opn-navbar-collapsed .opn-navbar-header {
+    padding-bottom: 0;
+    margin-bottom: 0;
+    border-bottom: 0;
 }
 
 .opn-navbar-tree {
