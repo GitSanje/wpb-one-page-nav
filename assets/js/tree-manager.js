@@ -96,9 +96,7 @@ class SidebarState {
         this.collapsed.clear();
 
         ids.forEach(id => {
-
             this.collapsed.add(String(id));
-
         });
 
     }

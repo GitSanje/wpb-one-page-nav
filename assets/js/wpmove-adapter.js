@@ -14,59 +14,66 @@ class WpMoveAdapter {
 
     }
 
-    /*----------------------------------------------------*/
+    /*======================================================
+    =
+    =  PUBLIC
+    =
+    ======================================================*/
 
     move(session) {
 
-        const sourceView =
-            this.getView(session.model);
+        const sourceView = this.getView(session.model);
+        const targetView = this.getView(session.target);
 
-        const targetView =
-            this.getView(session.target);
-
-        if (!sourceView || !targetView)
+        if (!sourceView || !targetView) {
             return false;
+        }
 
         const $source = sourceView.$el;
         const $target = targetView.$el;
 
-        if (!$source || !$source.length || !$target || !$target.length)
+        if (
+            !$source.length ||
+            !$target.length
+        ) {
             return false;
+        }
 
-        console.log(session, $source, $target);
-        
-
-        const container =
-            this.resolveContainer(
-                $target,
-                session.position
-            );
-
-        if (!container)
-            return false;
-
-        this.performDomMove(
-            $source,
+        const destination = this.resolveDestination(
             $target,
-            container,
             session.position
         );
 
-        this.nativeSync(
+        if (!destination) {
+            return false;
+        }
+
+        this.beginTransaction();
+
+        this.moveDom(
             $source,
-            container,
+            destination,
             session.position
         );
 
-        this.bus.trigger("tree:changed");
+        this.syncModel(
+            session.model,
+            destination.container
+        );
 
-        this.finish(session);
+        this.finishTransaction();
+
+        this.notify(session);
 
         return true;
 
     }
 
-    /*----------------------------------------------------*/
+    /*======================================================
+    =
+    =  LOOKUPS
+    =
+    ======================================================*/
 
     getView(model) {
 
@@ -76,49 +83,81 @@ class WpMoveAdapter {
 
     }
 
-    /*----------------------------------------------------*/
+    getModel(id) {
 
-    resolveContainer($target, position) {
-
-        if (position !== "inside") {
-
-            const parent = $target.parent();
-
-            return parent.length
-                ? parent
-                : $target.closest(".wpb_column_container, #wpbakery_content");
-
-        }
-
-        let container =
-            $target.children(".wpb_element_wrapper")
-                .children(".wpb_column_container");
-
-        if (container.length)
-            return container;
-
-        container =
-            $target.find(".wpb_column_container")
-                .first();
-
-        if (container.length)
-            return container;
-
-        const fallback =
-            $target.closest(".wpb_column_container");
-
-        return fallback.length
-            ? fallback
-            : null;
+        return this.tree.getModel(id);
 
     }
 
-    /*----------------------------------------------------*/
+    /*======================================================
+    =
+    =  DESTINATION
+    =
+    ======================================================*/
 
-    performDomMove(
-        $source,
+    resolveDestination(
         $target,
-        container,
+        position
+    ) {
+
+        if (position === "inside") {
+
+            let container =
+                $target
+                    .children(".wpb_element_wrapper")
+                    .children(".wpb_column_container");
+
+            if (!container.length) {
+
+                container =
+                    $target.find(
+                        ".wpb_column_container"
+                    ).first();
+
+            }
+
+            if (!container.length) {
+                return null;
+            }
+
+            return {
+
+                container,
+
+                reference: null,
+
+                parentId:
+                    $target.data("model").id
+
+            };
+
+        }
+
+        const container =
+            $target.parent();
+
+        return {
+
+            container,
+
+            reference: $target,
+
+            parentId:
+                this.findParentId(container)
+
+        };
+
+    }
+
+    /*======================================================
+    =
+    =  DOM
+    =
+    ======================================================*/
+
+    moveDom(
+        $source,
+        destination,
         position
     ) {
 
@@ -126,19 +165,25 @@ class WpMoveAdapter {
 
             case "before":
 
-                $target.before($source);
+                destination.reference.before(
+                    $source
+                );
 
                 break;
 
             case "after":
 
-                $target.after($source);
+                destination.reference.after(
+                    $source
+                );
 
                 break;
 
             case "inside":
 
-                container.append($source);
+                destination.container.append(
+                    $source
+                );
 
                 break;
 
@@ -146,129 +191,106 @@ class WpMoveAdapter {
 
     }
 
-    /*----------------------------------------------------*/
+    /*======================================================
+    =
+    =  BACKBONE
+    =
+    ======================================================*/
 
-    nativeSync(
-        $source,
-        $container,
-        position
+    syncModel(
+        model,
+        container
     ) {
 
-        this.refreshSortable(
-            $container
+        const parentId =
+            this.findParentId(container);
+
+        this.updateParent(
+            model,
+            parentId
         );
 
-        this.syncBackbone(
-            $source,
-            position
+        this.updateOrders(
+            container
         );
 
-        this.tree.rebuild();
+        this.saveStorage();
 
     }
 
+    updateParent(
+        model,
+        parentId
+    ) {
 
-    syncBackbone($source, position) {
+        const current =
+            model.get("parent_id");
 
-            const model =
-                $source.data("model");
-
-            if (!model)
-                return;
-
-            this.updateParent(model, position);
-
-            this.updateSiblingOrders(
-                model.get("parent_id")
-            );
-
-            this.vc.storage.save();
-
-            this.tree.rebuild();
-
-        }
-
-    updateParent(model, position) {
-
-        const view =
-            this.getView(model);
-
-        if (!view || !view.$el)
+        if (current === parentId) {
             return;
-
-        const parent =
-            view.$el
-                .parent()
-                .closest("[data-model-id]");
-
-        const parentId =
-            position === "inside"
-                ? (parent.length ? parent.data("model")?.id : null)
-                : (parent.length ? parent.data("model")?.id : null);
+        }
 
         model.save({
 
-            parent_id: parentId || null
+            parent_id: parentId
 
-        }, {
-            silent: true
         });
 
     }
-    updateSiblingOrders(parentId) {
 
-        let container = null;
+    updateOrders(container) {
 
-        if (parentId) {
-
-            const parentModel =
-                this.tree.getModel(parentId);
-
-            const parentView =
-                parentModel
-                    ? this.getView(parentModel)
-                    : null;
-
-            if (parentView && parentView.$el) {
-
-                container =
-                    parentView.$el
-                        .children(".wpb_element_wrapper")
-                        .children(".wpb_column_container");
-
-                if (!container.length) {
-
-                    container =
-                        parentView.$el.find(".wpb_column_container")
-                            .first();
-
-                }
-
-            }
-
-        }
-
-        if (!container || !container.length) {
-
-            container =
-                jQuery("#wpbakery_content");
-
-        }
-
-        container.children("[data-model-id]")
+        container
+            .children("[data-model-id]")
             .each(function(index){
 
-                jQuery(this)
-                    .data("model")
-                    .save({
+                const model =
+                    jQuery(this)
+                        .data("model");
 
-                        order:index
+                if (!model) {
+                    return;
+                }
 
-                    }, {
-                        silent: true
-                    });
+                if (
+                    model.get("order") === index
+                ) {
+                    return;
+                }
+
+                model.save({
+
+                    order: index
+
+                });
 
             });
+
+    }
+
+    /*======================================================
+    =
+    =  HELPERS
+    =
+    ======================================================*/
+
+    findParentId(container) {
+
+        const parent =
+            container.closest(
+                "[data-model-id]"
+            );
+
+        if (!parent.length) {
+            return false;
+        }
+
+        const model =
+            parent.data("model");
+
+        return model
+            ? model.id
+            : false;
 
     }
 
@@ -279,16 +301,59 @@ class WpMoveAdapter {
             container.data("ui-sortable")
         ) {
 
-            container.sortable("refresh");
+            container.sortable(
+                "refresh"
+            );
 
-            container.sortable("refreshPositions");
+            container.sortable(
+                "refreshPositions"
+            );
+
+        }
+
+    }
+
+    saveStorage() {
+
+        this.vc.storage.save();
+
+    }
+
+    beginTransaction() {
+
+        if (
+            this.vc.storage.lock
+        ) {
+
+            this.vc.storage.lock();
+
+        }
+
+    }
+
+    finishTransaction() {
+
+        if (
+            this.vc.storage.unlock
+        ) {
+
+            this.vc.storage.unlock();
 
         }
 
         this.vc.app.setSortable();
 
     }
-    finish(session) {
+
+    /*======================================================
+    =
+    =  EVENTS
+    =
+    ======================================================*/
+
+    notify(session) {
+
+        this.tree.rebuild();
 
         this.bus.trigger(
             "tree:changed"

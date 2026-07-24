@@ -140,22 +140,34 @@ class Navbar {
             };
 
         this.nav
+    .querySelector(".opn-collapse-rows")
+    .onclick = () => {
 
-            .querySelector(
+        const ids = this.tree
+            .flatten()
+            .map(model => model.id);
 
-                ".opn-collapse-rows"
+        // this.state.collapseAllRows(ids);
 
-            )
+        ids.forEach(id => {
 
-            .onclick = () => {
+            const view = vc.app.views[id];
 
-                this.state.collapseAllRows(
-                    this.tree.flatten().map(model => model.id)
-                );
+            if (!view) {
+                return;
+            }
 
-                this.render();
+            if (view.model.get("shortcode") !== "vc_row") {
+                return;
+            }
 
-            };
+            view.$el.addClass("vc_collapsed-row");
+
+        });
+
+        this.render();
+
+    };
 
     }
 
