@@ -23,6 +23,10 @@
 
 /* Sidebar shell */
 .opn-custom-navbar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    transform: translate3d(24px, 80px, 0);
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -33,6 +37,7 @@
     background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.35);
+    will-change: transform;
 }
 
 .opn-custom-navbar::-webkit-scrollbar {
@@ -95,6 +100,7 @@
 .opn-custom-navbar.opn-navbar-dragging {
     cursor: grabbing;
     user-select: none;
+    transition: none;
 }
 
 .opn-navbar-header h3 {
@@ -274,14 +280,7 @@
     background: rgba(245, 158, 11, 0.12) !important;
 }
 
-.opn-row-collapsed .wpb_element_wrapper,
-.opn-row-collapsed .wpb_column_container {
-    display: none !important;
-}
 
-.opn-row-collapsed .vc_controls {
-    display: none !important;
-}
 
 /* Nav Items */
 .opn-custom-navbar a {

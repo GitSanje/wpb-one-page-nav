@@ -19,7 +19,7 @@ class Navbar {
         this.nav.className =
             "opn-custom-navbar";
 
-         this.position = {
+        this.position = {
             left: 24,
             top: 80
         };
@@ -32,9 +32,11 @@ class Navbar {
         };
 
         this.isCollapsed = false;
+        this.pendingFrame = false;
 
         this.handlePointerMove = this.handlePointerMove.bind(this);
         this.handlePointerUp = this.handlePointerUp.bind(this);
+        this.renderDragFrame = this.renderDragFrame.bind(this);
 
     }
 
@@ -112,6 +114,12 @@ class Navbar {
 
         );
 
+        this.nav.style.position = "fixed";
+        this.nav.style.left = "0";
+        this.nav.style.top = "0";
+        this.nav.style.willChange = "transform";
+        this.nav.style.touchAction = "none";
+
         this.applyLayoutState();
 
     }
@@ -184,34 +192,33 @@ class Navbar {
             };
 
         this.nav
-    .querySelector(".opn-collapse-rows")
-    .onclick = () => {
+            .querySelector(".opn-collapse-rows")
+            .onclick = () => {
 
-        const ids = this.tree
-            .flatten()
-            .map(model => model.id);
+                const ids = this.tree
+                    .flatten()
+                    .map(model => model.id);
 
-        // this.state.collapseAllRows(ids);
 
-        ids.forEach(id => {
+                ids.forEach(id => {
 
-            const view = vc.app.views[id];
+                    const view = vc.app.views[id];
 
-            if (!view) {
-                return;
-            }
+                    if (!view) {
+                        return;
+                    }
 
-            if (view.model.get("shortcode") !== "vc_row") {
-                return;
-            }
+                    if (view.model.get("shortcode") !== "vc_row") {
+                        return;
+                    }
 
-            view.$el.addClass("vc_collapsed-row");
+                    view.$el.addClass("vc_collapsed-row");
 
-        });
+                });
 
-        this.render();
+                this.render();
 
-    };
+            };
 
     }
 
@@ -219,8 +226,9 @@ class Navbar {
 
     applyLayoutState() {
 
-        this.nav.style.left = `${this.position.left}px`;
-        this.nav.style.top = `${this.position.top}px`;
+        this.nav.style.left = "0";
+        this.nav.style.top = "0";
+        this.nav.style.transform = `translate3d(${this.position.left}px, ${this.position.top}px, 0)`;
 
         this.nav.classList.toggle("opn-navbar-collapsed", this.isCollapsed);
 
@@ -287,8 +295,19 @@ class Navbar {
         this.position.left = Math.min(maxLeft, Math.max(0, event.clientX - this.dragOffset.x));
         this.position.top = Math.min(maxTop, Math.max(0, event.clientY - this.dragOffset.y));
 
-        this.nav.style.left = `${this.position.left}px`;
-        this.nav.style.top = `${this.position.top}px`;
+        if (!this.pendingFrame) {
+            this.pendingFrame = true;
+            requestAnimationFrame(this.renderDragFrame);
+        }
+
+    }
+
+    /*====================================================*/
+
+    renderDragFrame() {
+
+        this.pendingFrame = false;
+        this.nav.style.transform = `translate3d(${this.position.left}px, ${this.position.top}px, 0)`;
 
     }
 
@@ -297,6 +316,7 @@ class Navbar {
     handlePointerUp() {
 
         this.dragging = false;
+        this.pendingFrame = false;
         this.nav.classList.remove("opn-navbar-dragging");
 
         document.removeEventListener("pointermove", this.handlePointerMove);
@@ -572,11 +592,11 @@ class TreeNodeView {
 
         this.childrenViews = [];
 
-       this.el =
+        this.el =
             document.createElement("div");
 
         this.el.className =
-            "opn-tree-item"; 
+            "opn-tree-item";
 
     }
 
@@ -653,7 +673,7 @@ class TreeNodeView {
             this.state.toggle(
                 this.model.id
             );
-          this.navbar.render();
+            this.navbar.render();
 
         };
 
@@ -772,7 +792,7 @@ class TreeNodeView {
                 const node =
                     this.navbar
 
-                    .createNode(child);
+                        .createNode(child);
 
                 container.appendChild(
 

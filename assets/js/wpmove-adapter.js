@@ -210,6 +210,9 @@ class WpMoveAdapter {
             parentId
         );
 
+
+        
+
         this.updateOrders(
             container
         );
@@ -243,11 +246,13 @@ class WpMoveAdapter {
         container
             .children("[data-model-id]")
             .each(function(index){
-
+               
                 const model =
                     jQuery(this)
                         .data("model");
-
+        
+         
+            
                 if (!model) {
                     return;
                 }
@@ -259,9 +264,7 @@ class WpMoveAdapter {
                 }
 
                 model.save({
-
                     order: index
-
                 });
 
             });
@@ -280,6 +283,8 @@ class WpMoveAdapter {
             container.closest(
                 "[data-model-id]"
             );
+
+      
 
         if (!parent.length) {
             return false;
@@ -301,6 +306,7 @@ class WpMoveAdapter {
             container.data("ui-sortable")
         ) {
 
+         
             container.sortable(
                 "refresh"
             );
