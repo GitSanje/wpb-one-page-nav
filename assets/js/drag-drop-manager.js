@@ -1,6 +1,21 @@
 // =======================================================
 // DragDropManager
 // =======================================================
+const DROP_RULES = {
+    vc_row: {
+        parents: ["root"]
+    },
+    vc_column: {
+        parents: ["vc_row"]
+    },
+    vc_column_inner: {
+        parents: ["vc_column"]
+    },
+    "*": {
+        parents: ["vc_column", "vc_column_inner"]
+    }
+};
+
 
 class DragDropManager {
 
@@ -184,6 +199,26 @@ class DragDropManager {
 
     }
 
+
+    getparentType(model){
+
+        const pid = model.get("parent_id") 
+        return pid ? this.vc.shortcodes.get(pid).get("shortcode") : null;
+
+    }
+    isSourceParent(sourceType, targetType){
+         let current = DROP_RULES[targetType].parents[0]|| DROP_RULES["*"].parents[0];
+
+         while (current){
+          
+            
+            if (current === sourceType){
+                return true
+            }
+            current = DROP_RULES[current]?.parents[0] || null
+         }
+         return false
+    }
     canDrop() {
 
         if (!this.session || !this.session.target) {
@@ -198,10 +233,28 @@ class DragDropManager {
             return false;
         }
 
+           
+
         const source = this.session.model.get("shortcode");
         const target = this.session.target.get("shortcode");
 
+
+        if (source === "vc_column" && target === "vc_row"){
+            return false;
+        }
+        
+
+        if ( this.getparentType(this.session.model) === this.getparentType(this.session.target) && this.session.position === "inside"){
+      
+            return false
+        }
+        if(this.isSourceParent(source, target)){
+            
+            return false
+        }
+
         if (this.vc.check_relevance) {
+            
             return this.vc.check_relevance(target, source);
         }
 

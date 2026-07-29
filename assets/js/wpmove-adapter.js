@@ -89,6 +89,39 @@ class WpMoveAdapter {
 
     }
 
+    findInnerContainer($target) {
+
+    const model = $target.data("model");
+
+    if (!model)
+        return null;
+
+    switch (model.get("shortcode")) {
+
+        case "vc_row":
+        case "vc_row_inner":
+
+            return $target
+                .children(".wpb_element_wrapper")
+                .children(".wpb_row_container");
+
+        case "vc_column":
+        case "vc_column_inner":
+
+            return $target
+                .children(".wpb_element_wrapper")
+                .children(".wpb_column_container");
+
+        default:
+
+            return $target
+                .find(".wpb_column_container")
+                .first();
+
+    }
+
+}
+
     /*======================================================
     =
     =  DESTINATION
@@ -102,19 +135,8 @@ class WpMoveAdapter {
 
         if (position === "inside") {
 
-            let container =
-                $target
-                    .children(".wpb_element_wrapper")
-                    .children(".wpb_column_container");
-
-            if (!container.length) {
-
-                container =
-                    $target.find(
-                        ".wpb_column_container"
-                    ).first();
-
-            }
+            const container =
+                   this.findInnerContainer($target);
 
             if (!container.length) {
                 return null;
