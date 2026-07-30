@@ -259,7 +259,6 @@ class AutoScroller {
     constructor(container) {
 
         this.container = container;
-
         this.threshold = 50;
 
         this.maxSpeed = 18;
@@ -276,6 +275,12 @@ class AutoScroller {
             this.container.getBoundingClientRect();
 
         if (!rect || !Number.isFinite(rect.top) || !Number.isFinite(rect.bottom)) {
+            return;
+        }
+
+        const maxScrollTop = Math.max(0, this.container.scrollHeight - this.container.clientHeight);
+
+        if (maxScrollTop <= 0) {
             return;
         }
 
@@ -334,7 +339,9 @@ class AutoScroller {
         if (speed === 0)
             return;
 
-        this.container.scrollTop += speed;
+        const nextScrollTop = this.container.scrollTop + speed;
+
+        this.container.scrollTop = Math.max(0, Math.min(maxScrollTop, nextScrollTop));
 
     }
 

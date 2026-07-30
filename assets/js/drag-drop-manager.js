@@ -29,7 +29,7 @@ class DragDropManager {
 
         this.session = null;
         this.ghost = new GhostManager();
-        this.scroller = new AutoScroller(navbar.treeRoot);
+        this.scroller = new AutoScroller(navbar?.nav || navbar?.treeRoot || null);
         this.resolver = new DropResolver(tree);
         this.adapter = null;
         this.threshold = 8;
@@ -200,25 +200,28 @@ class DragDropManager {
     }
 
 
-    getparentType(model){
+    getparentType(model) {
 
-        const pid = model.get("parent_id") 
+        const pid = model.get("parent_id")
         return pid ? this.vc.shortcodes.get(pid).get("shortcode") : null;
 
     }
-    isSourceParent(sourceType, targetType){
-         let current = DROP_RULES[targetType].parents[0]|| DROP_RULES["*"].parents[0];
 
-         while (current){
-          
-            
-            if (current === sourceType){
+
+    isParent(sourceType, targetType) {
+        let current = DROP_RULES[targetType]?.parents[0] || DROP_RULES["*"].parents[0];
+
+        while (current) {
+
+
+            if (current === sourceType) {
                 return true
             }
             current = DROP_RULES[current]?.parents[0] || null
-         }
-         return false
+        }
+        return false
     }
+
     canDrop() {
 
         if (!this.session || !this.session.target) {
@@ -233,30 +236,69 @@ class DragDropManager {
             return false;
         }
 
-           
+
 
         const source = this.session.model.get("shortcode");
         const target = this.session.target.get("shortcode");
 
+        const sourcePid = this.session.model.get("parent_id");
+        const targetPid = this.session.target.get("parent_id");
 
-        if (source === "vc_column" && target === "vc_row"){
-            return false;
+        const sourceParent = DROP_RULES[source]?.parents[0] || DROP_RULES["*"].parents[0];
+        const targetParent = DROP_RULES[target]?.parents[0] || DROP_RULES["*"].parents[0];
+
+
+
+
+
+
+        // CASE 1 => if source is the child of the target  => only position "inside" is valid 
+        if (this.isParent(target, source)) {
+            if ((this.session.position === "before" || this.session.position === "after")) {
+                return false
+            }
+            if (sourceParent === "vc_column" && target !== "vc_column") {
+                return false
+            }
+            if (source === "vc_column" && target === "vc_row") {
+                return false;
+            }
+
+            return true
         }
-        
 
-        if ( this.getparentType(this.session.model) === this.getparentType(this.session.target) && this.session.position === "inside"){
-      
+
+        // CASE 2  => if both have same parent , ie. siblings => position "inside" is invalid 
+
+        if (this.getparentType(this.session.model) === this.getparentType(this.session.target)) {
+            if (this.session.position === "inside") {
+                return false
+            }
+            if (source === "vc_column" && target === "vc_column" && (sourcePid !== targetPid)) {
+                return false;
+            }
+
+
+            return true
+        }
+
+        // CASE 3  => if source is the descendent of the target  => all position  is invalid ( all operations invalid)
+        if (this.isParent(source, target)) {
             return false
         }
-        if(this.isSourceParent(source, target)){
-            
-            return false
-        }
 
-        if (this.vc.check_relevance) {
-            
-            return this.vc.check_relevance(target, source);
-        }
+
+
+
+
+
+
+
+
+        // if (this.vc.check_relevance) {
+
+        //     return this.vc.check_relevance(target, source);
+        // }
 
         return true;
 
